@@ -1,21 +1,28 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 import random
-import time
 import os
 
 # Возможные варианты выбора
 choices = ["R", "P", "S"]
 image_path = os.path.join(os.path.dirname(__file__), "image")
 
-# Функция для выбора компьютера с "каруселью"
 def start_carousel():
-    global computer_choice
-    while running:
+    global carousel_id
+    if running:
+        # Выбираем случайный вариант для компьютера
         computer_choice = random.choice(choices)
         update_computer_image(computer_choice)
-        root.update()
-        time.sleep(carousel_speed)
+        
+        # Запускаем карусель с задержкой
+        carousel_id = root.after(int(carousel_speed * 100), start_carousel)  # задержка в миллисекундах
+
+def stop_carousel():
+    global carousel_id
+    # Останавливаем карусель
+    if carousel_id is not None:
+        root.after_cancel(carousel_id)
+        carousel_id = None
 
 def update_computer_image(choice):
     img = images[choice]
@@ -27,9 +34,10 @@ def update_user_image(choice):
 
 def stop_game():
     global running
-    running = False
+    stop_carousel()  # Останавливаем карусель
     result = check_winner(user_choice, computer_choice)
     result_label.config(text=result)
+    running = False  # Останавливаем игру
 
 def check_winner(user, computer):
     if user == computer:
@@ -42,13 +50,21 @@ def check_winner(user, computer):
         return "Oh! Computer wins!"
 
 def on_user_choice(choice):
-    global user_choice, running
+    global user_choice, running, computer_choice
     user_choice = choice
     update_user_image(user_choice)
+
+    # Останавливаем игру и карусель, если она уже запущена
+    if running:
+        stop_carousel()
     
+    # Запускаем карусель
     running = True
+    computer_choice = random.choice(choices)  # Выбираем начальное значение для компьютера
     start_carousel()
-    stop_game()
+    
+    # Останавливаем игру через 2 секунды (пример)
+    root.after(2000, stop_game)
 
 def set_carousel_speed(value):
     global carousel_speed
@@ -91,6 +107,7 @@ user_choice = None
 computer_choice = None
 running = False
 carousel_speed = 1.0
+carousel_id = None
 
 # Запуск приложения
 root.mainloop()
